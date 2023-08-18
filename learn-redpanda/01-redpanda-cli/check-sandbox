@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euxo pipefail
+
+# if ! docker ps --format {{.Names}} | grep "redpanda-0"; then
+#     fail-message "Redpanda is not running"
+# fi
+
+# if ! docker ps --format {{.Names}} | grep "redpanda-console"; then
+#     fail-message "Redpanda is not running"
+# fi
+
+

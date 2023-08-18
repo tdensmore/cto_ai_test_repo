@@ -1,0 +1,115 @@
+#!/bin/bash
+set -euxo pipefail
+
+echo "Running track setup script on host docker-vm"
+
+# Wait for the Instruqt host bootstrap to finish
+until [ -f /opt/instruqt/bootstrap/host-bootstrap-completed ]
+do
+    sleep 1
+done
+
+# 
+sudo apt-get update
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common unzip
+# add GPG
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+# add docker to APT sources
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+# update APT
+sudo apt update
+apt-cache policy docker-ce
+
+# install docker-ce
+sudo apt install -y docker-ce
+docker version > .docker_version.txt
+
+# install docker compose plugin
+sudo apt-get update
+sudo apt-get install -y docker-compose-plugin
+docker compose version > .docker_compose_version.txt
+
+# install redpanda cli
+curl -LO https://github.com/redpanda-data/redpanda/releases/latest/download/rpk-linux-amd64.zip
+mkdir -p ~/.local/bin
+unzip rpk-linux-amd64.zip -d /usr/local/bin/
+# export PATH="~/.local/bin:$PATH"
+rpk version > .rpk_version.txt
+
+# Initialize the home directory with the Dockerfile
+mkdir /redpanda
+touch /redpanda/docker-compose.yml
+
+# Create the docker-comppose file
+cat <<EOF >> /redpanda/docker-compose.yml
+---
+version: "3.7"
+name: redpanda-quickstart
+networks:
+  redpanda_network:
+    driver: bridge
+volumes:
+  redpanda-0: null
+services:
+  redpanda-0:
+    container_name: redpanda-0
+    image: docker.redpanda.com/redpandadata/redpanda:v23.2.6
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      # Address the broker advertises to clients that connect to the HTTP Proxy.
+      - --advertise-pandaproxy-addr internal://redpanda-0:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      # Redpanda brokers use the RPC API to communicate with eachother internally.
+      - --rpc-addr redpanda-0:33145
+      - --advertise-rpc-addr redpanda-0:33145
+      # Tells Seastar (the framework Redpanda uses under the hood) to use 1 core on the system.
+      - --smp 1
+      # The amount of memory to make available to Redpanda.
+      - --memory 1G
+      # Mode dev-container uses well-known configuration properties for development in containers.
+      - --mode dev-container
+      # enable logs for debugging.
+      - --default-log-level=debug
+    volumes:
+      - redpanda-0:/var/lib/redpanda/data
+    networks:
+      - redpanda_network
+    ports:
+      - 18081:18081
+      - 18082:18082
+      - 19092:19092
+      - 19644:9644
+  console:
+    container_name: redpanda-console
+    image: docker.redpanda.com/redpandadata/console:v2.3.1
+    networks:
+      - redpanda_network
+    entrypoint: /bin/sh
+    command: -c 'echo "$CONSOLE_CONFIG_FILE" > /tmp/config.yml; /app/console'
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda-0:9092"]
+          schemaRegistry:
+            enabled: true
+            urls: ["http://redpanda-0:8081"]
+        redpanda:
+          adminApi:
+            enabled: true
+            urls: ["http://redpanda-0:9644"]
+    ports:
+      - 8080:8080
+    depends_on:
+      - redpanda-0
+EOF
+
+set-workdir /redpanda
+
+cd /redpanda
+docker compose up -d
+

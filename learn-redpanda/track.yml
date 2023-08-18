@@ -1,0 +1,24 @@
+slug: redpanda
+id: h9abf8bjxwcw
+title: Redpanda
+teaser: Learn the basics of Redpanda without setup effort.
+description: |-
+  Redpanda is a simple, powerful, and cost-efficient
+  streaming data platform that is compatible with
+  Kafka® APIs while eliminating Kafka complexity.
+
+  **This track demonstrates how to:**
+
+  * Use the Redpanda CLI to create topics and push messages.
+  * Navigate the Redpanda UI to explore topics and messages.
+
+icon: https://res.cloudinary.com/practicaldev/image/fetch/s--W2NpA-Jj--/c_fill,f_auto,fl_progressive,h_320,q_auto,w_320/https://dev-to-uploads.s3.amazonaws.com/uploads/organization/profile_image/5327/ea54f4c7-abf0-46fc-a971-766b484ab9bd.png
+tags: []
+owner: instruqt-demos
+developers:
+- todd@instruqt.com
+lab_config:
+  overlay: false
+  width: 33
+  position: right
+checksum: "5542288434481068308"

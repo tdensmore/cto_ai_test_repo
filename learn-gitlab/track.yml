@@ -1,0 +1,17 @@
+slug: learn-gitlab
+id: a7ripfokozbk
+title: Learn GitLab
+description: This is a simple track with GitLab preinstalled on a host machine.
+icon: https://cdn-icons-png.flaticon.com/512/5968/5968853.png
+tags: []
+owner: instruqt-demos
+developers:
+- jacob@instruqt.com
+- todd@instruqt.com
+show_timer: true
+timelimit: 10800
+lab_config:
+  overlay: false
+  width: 33
+  position: right
+checksum: "12282408935807503648"
